@@ -1,0 +1,9 @@
+path: "I:/Keanne/CS176/yolo machine exercise/my_dataset_split"
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: "banchou"
+  1: "shachou"
+  2: "kanata"

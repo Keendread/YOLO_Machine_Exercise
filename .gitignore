@@ -1,0 +1,19 @@
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Model training outputs and downloaded weights
+runs/
+*.pt
+
+# Local datasets can be large and may contain private data.
+datasets/
+data/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+src/yolo_detection_starter.egg-info/PKG-INFO
+src/yolo_detection_starter.egg-info/SOURCES.txt
+src/yolo_detection_starter.egg-info/dependency_links.txt
+src/yolo_detection_starter.egg-info/requires.txt
+src/yolo_detection_starter.egg-info/top_level.txt
+src/yolo_starter/__init__.py
+src/yolo_starter/dataset.py
+src/yolo_starter/evaluate.py
+src/yolo_starter/predict.py
+src/yolo_starter/prepare_dataset.py
+src/yolo_starter/train.py
+src/yolo_starter/window_app.py
+tests/test_dataset.py
