@@ -153,6 +153,8 @@ def discover_split_pairs(
             continue
         normalized = member_name.replace("\\", "/")
         path = PurePosixPath(normalized)
+        if any(part == ".." for part in path.parts) or path.is_absolute():
+            raise ValueError(f"Unsafe path in archive entry: '{member_name}'")
         if path.suffix.lower() not in IMAGE_SUFFIXES:
             continue
 

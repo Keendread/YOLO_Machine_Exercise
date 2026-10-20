@@ -260,6 +260,18 @@ class DownloadHelmetDatasetTests(unittest.TestCase):
             self.assertTrue(archive_path.is_file())
             mock_urlopen.assert_called_once()
 
+    def test_rejects_unsafe_archive_entry_path(self) -> None:
+        archive_path = self.root / "unsafe.zip"
+        files = {
+            "train/images/../../escape.jpg": b"data",
+            "train/labels/../../escape.txt": "0 0.5 0.5 0.1 0.1\n",
+            "val/images/val.jpg": b"data",
+            "val/labels/val.txt": "1 0.5 0.5 0.1 0.1\n",
+        }
+        _create_zip_with_files(archive_path, files)
+        with self.assertRaisesRegex(ValueError, "Unsafe path in archive entry"):
+            download_helmet_dataset(archive=archive_path, output=self.root / "unsafe_out")
+
     def test_build_parser_defaults(self) -> None:
         parser = build_parser()
         args = parser.parse_args([])
