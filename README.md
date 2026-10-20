@@ -233,6 +233,35 @@ This is an application threshold, not a substitute for evaluation:
 python -m yolo_starter.predict --weights .\runs\detect\yolo-starter\weights\best.pt --source .\example.jpg --conf 0.4
 ```
 
+## Helmet Checker (desktop app)
+
+A Tkinter app that screens photos of two-wheeler riders and counts how many
+riders wear a helmet. Detections are for screening and need human review.
+
+1. **Download the dataset.** Get a helmet dataset annotated in YOLO detection
+   format with the classes `Helmet` (0) and `No-Helmet` (1), and place its
+   images and labels in `my_dataset/images` and `my_dataset/labels`.
+2. **Train.** Split the dataset and train as in sections 2 and 3:
+
+   ```powershell
+   python -m yolo_starter.prepare_dataset --root .\my_dataset --classes "Helmet,No-Helmet"
+   python -m yolo_starter.train --data .\my_dataset_split\data.yaml
+   ```
+
+3. **Launch the app.**
+
+   ```powershell
+   python -m yolo_starter.helmet_app
+   ```
+
+   Choose the trained `best.pt` (the newest one under `runs/detect` is
+   suggested), click **Add images...** (`jpg`, `jpeg`, `png`, `webp`, `bmp`),
+   set the confidence threshold (default `0.25`, applied to the next run), and
+   click **Run detection**. Select an image in the list to see the annotated
+   result and its summary; the batch total is shown under the preview.
+4. **Export CSV.** Once results exist, **Export CSV** saves one row per image
+   plus a `TOTAL` row.
+
 ## Run the lightweight tests
 
 The dataset checks use only the Python standard library, so they do not download
