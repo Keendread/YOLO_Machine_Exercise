@@ -131,6 +131,35 @@ def extract_classes_from_archive(zf: zipfile.ZipFile) -> list[str] | None:
     return None
 
 
+def polygons_to_boxes(label_text: str) -> str:
+    """Convert YOLO segmentation lines (class x1 y1 x2 y2 ...) to box lines.
+
+    Some images in the source dataset carry polygon labels instead of
+    ``class x_center y_center width height``. A polygon line becomes the
+    bounding box around its points; box lines and malformed lines are kept
+    unchanged so the dataset checker still reports anything truly broken.
+    """
+    lines = []
+    for line in label_text.splitlines():
+        values = line.split()
+        if len(values) >= 7 and len(values) % 2 == 1:
+            try:
+                coords = [float(value) for value in values[1:]]
+            except ValueError:
+                lines.append(line)
+                continue
+            xs, ys = coords[0::2], coords[1::2]
+            x_min, x_max = max(min(xs), 0.0), min(max(xs), 1.0)
+            y_min, y_max = max(min(ys), 0.0), min(max(ys), 1.0)
+            lines.append(
+                f"{values[0]} {(x_min + x_max) / 2:.6f} {(y_min + y_max) / 2:.6f} "
+                f"{x_max - x_min:.6f} {y_max - y_min:.6f}"
+            )
+        else:
+            lines.append(line)
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
 def discover_split_pairs(
     zf: zipfile.ZipFile,
 ) -> dict[str, list[tuple[str, str, PurePosixPath]]]:
@@ -156,6 +185,9 @@ def discover_split_pairs(
         if any(part == ".." for part in path.parts) or path.is_absolute():
             raise ValueError(f"Unsafe path in archive entry: '{member_name}'")
         if path.suffix.lower() not in IMAGE_SUFFIXES:
+            continue
+        # Skip macOS archive metadata (__MACOSX/ folders and ._ resource forks).
+        if "__MACOSX" in path.parts or path.name.startswith("._"):
             continue
 
         parts = path.parts
@@ -313,8 +345,8 @@ def download_helmet_dataset(
 
                 with zf.open(img_entry) as src, open(target_img, "wb") as dst:
                     shutil.copyfileobj(src, dst)
-                with zf.open(lbl_entry) as src, open(target_lbl, "wb") as dst:
-                    shutil.copyfileobj(src, dst)
+                raw_label = zf.read(lbl_entry).decode("utf-8", errors="replace")
+                target_lbl.write_text(polygons_to_boxes(raw_label), encoding="utf-8")
 
     write_dataset_yaml(output_root, effective_classes, output_root / "data.yaml")
     return validate_dataset(output_root, effective_classes)
