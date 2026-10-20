@@ -77,11 +77,17 @@ def fit_size(width: int, height: int, max_width: int, max_height: int) -> tuple[
     return max(1, int(width * scale)), max(1, int(height * scale))
 
 
+BUNDLED_WEIGHTS = Path(__file__).resolve().parents[2] / "models" / "helmet-yolo11n.pt"
+
+
 def default_weights() -> Path:
-    """Suggest the newest runs/detect/**/weights/best.pt, else the default train location."""
+    """Suggest the newest runs/detect/**/weights/best.pt, then the bundled model,
+    else the default train location."""
     candidates = list(Path("runs/detect").glob("**/weights/best.pt"))
     if candidates:
         return max(candidates, key=lambda path: path.stat().st_mtime).resolve()
+    if BUNDLED_WEIGHTS.is_file():
+        return BUNDLED_WEIGHTS
     return Path("runs/detect/yolo-starter/weights/best.pt").resolve()
 
 

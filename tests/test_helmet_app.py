@@ -83,6 +83,25 @@ class HelperTests(unittest.TestCase):
     def test_default_confidence(self) -> None:
         self.assertEqual(helmet_app.DEFAULT_CONFIDENCE, 0.25)
 
+    def test_default_weights_falls_back_to_bundled_model(self) -> None:
+        with tempfile.TemporaryDirectory() as empty:
+            bundled = Path(empty) / "models" / "helmet-yolo11n.pt"
+            bundled.parent.mkdir()
+            bundled.touch()
+            cwd = os.getcwd()
+            original = helmet_app.BUNDLED_WEIGHTS
+            try:
+                os.chdir(empty)
+                helmet_app.BUNDLED_WEIGHTS = bundled
+                self.assertEqual(helmet_app.default_weights(), bundled)
+                trained = Path("runs/detect/mine/weights/best.pt")
+                trained.parent.mkdir(parents=True)
+                trained.touch()
+                self.assertEqual(helmet_app.default_weights(), trained.resolve())
+            finally:
+                helmet_app.BUNDLED_WEIGHTS = original
+                os.chdir(cwd)
+
     def test_fit_size_shrinks_but_never_enlarges(self) -> None:
         self.assertEqual(fit_size(2000, 1000, 500, 500), (500, 250))
         self.assertEqual(fit_size(100, 50, 500, 500), (100, 50))
