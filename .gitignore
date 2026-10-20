@@ -11,6 +11,9 @@ runs/
 # Local datasets can be large and may contain private data.
 datasets/
 data/
+datasets/*.zip
+datasets/**/*.zip
+*.zip
 
 # Editor and operating-system files
 .vscode/
