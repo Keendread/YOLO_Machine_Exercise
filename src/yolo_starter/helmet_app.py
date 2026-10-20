@@ -226,9 +226,9 @@ class HelmetCheckerApp:
         buttons.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(10, 0))
         self.add_button = ttk.Button(buttons, text="Add images...", command=self.add_images)
         self.clear_button = ttk.Button(buttons, text="Clear", command=self.clear)
-        ttk.Label(buttons, text="Confidence:").pack(side=tk.LEFT, padx=(16, 4))
         self.add_button.pack(side=tk.LEFT)
         self.clear_button.pack(side=tk.LEFT, padx=(8, 0))
+        ttk.Label(buttons, text="Confidence:").pack(side=tk.LEFT, padx=(16, 4))
         self.confidence_box = ttk.Spinbox(
             buttons, from_=0.0, to=1.0, increment=0.05, width=6, format="%.2f",
             textvariable=self.confidence,
@@ -294,9 +294,10 @@ class HelmetCheckerApp:
 
     def add_images(self) -> None:
         patterns = " ".join(f"*{ext} *{ext.upper()}" for ext in IMAGE_EXTENSIONS)
-        chosen = self.filedialog.askopenfilenames(
+        # Some Tk builds return one selection as a plain string, not a tuple.
+        chosen = self.root.tk.splitlist(self.filedialog.askopenfilenames(
             title="Add images", filetypes=[("Images", patterns), ("All files", "*.*")]
-        )
+        ))
         existing = set(self.paths)
         new = []
         for path in map(str, chosen):
@@ -344,7 +345,7 @@ class HelmetCheckerApp:
         self.results.clear()
         for iid in self.tree.get_children():
             self.tree.set(iid, "summary", "Queued")
-        self.summary.set("")
+        self._on_select()
         self.batch.set("")
         self.progress.configure(value=0, maximum=len(self.paths))
         self._set_running(True)
@@ -420,6 +421,8 @@ class HelmetCheckerApp:
         self.progress.configure(value=index + 1)
         if not self.tree.selection():
             self.tree.selection_set(iid)
+        elif self.tree.selection()[0] == iid:
+            self._on_select()
 
     def _finish(self, cancelled: bool) -> None:
         self._set_running(False)
