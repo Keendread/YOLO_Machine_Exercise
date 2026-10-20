@@ -16,6 +16,7 @@ from yolo_starter.download_helmet_dataset import (
     download_archive,
     download_helmet_dataset,
     parse_yaml_classes,
+    polygons_to_boxes,
 )
 
 
@@ -98,6 +99,51 @@ class DownloadHelmetDatasetTests(unittest.TestCase):
         self.assertEqual(report["val"]["images"], 1)
         self.assertTrue((output_dir / "images" / "train" / "t1.png").is_file())
         self.assertTrue((output_dir / "labels" / "train" / "t1.txt").is_file())
+
+    def test_discovery_skips_macos_metadata_entries(self) -> None:
+        archive_path = self.root / "macos.zip"
+        files = {
+            "ds/train/images/a.jpg": b"jpg1",
+            "ds/train/labels/a.txt": "0 0.5 0.5 0.2 0.3\n",
+            "ds/val/images/b.jpg": b"jpg2",
+            "ds/val/labels/b.txt": "1 0.5 0.5 0.2 0.3\n",
+            "__MACOSX/ds/train/images/._a.jpg": b"resource fork",
+            "ds/val/images/._b.jpg": b"resource fork",
+        }
+        _create_zip_with_files(archive_path, files)
+
+        with zipfile.ZipFile(archive_path) as zf:
+            discovered = discover_split_pairs(zf)
+
+        self.assertEqual([entry[0] for entry in discovered["train"]], ["ds/train/images/a.jpg"])
+        self.assertEqual([entry[0] for entry in discovered["val"]], ["ds/val/images/b.jpg"])
+
+    def test_polygons_to_boxes_converts_segments_only(self) -> None:
+        text = "0 0.5 0.5 0.2 0.3\n1 0.1 0.2 0.3 0.2 0.3 0.6 0.1 0.6\n"
+        self.assertEqual(
+            polygons_to_boxes(text),
+            "0 0.5 0.5 0.2 0.3\n1 0.200000 0.400000 0.200000 0.400000\n",
+        )
+        self.assertEqual(polygons_to_boxes(""), "")
+
+    def test_extraction_writes_box_labels_for_polygon_sources(self) -> None:
+        archive_path = self.root / "poly.zip"
+        files = {
+            "ds/train/images/a.jpg": b"jpg1",
+            "ds/train/labels/a.txt": "0 0.1 0.2 0.3 0.2 0.3 0.6 0.1 0.6\n",
+            "ds/val/images/b.jpg": b"jpg2",
+            "ds/val/labels/b.txt": "1 0.5 0.5 0.2 0.3\n",
+        }
+        _create_zip_with_files(archive_path, files)
+
+        output_dir = self.root / "poly_out"
+        report = download_helmet_dataset(archive=archive_path, output=output_dir)
+
+        self.assertEqual(report["train"], {"images": 1, "objects": 1})
+        self.assertEqual(
+            (output_dir / "labels" / "train" / "a.txt").read_text(encoding="utf-8"),
+            "0 0.200000 0.400000 0.200000 0.400000\n",
+        )
 
     def test_subsetting_determinism(self) -> None:
         archive_path = self.root / "multi.zip"
