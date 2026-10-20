@@ -278,3 +278,12 @@ python -m unittest discover -s tests -v
 - [Model validation and metrics](https://docs.ultralytics.com/modes/val/)
 - [Model prediction](https://docs.ultralytics.com/modes/predict/)
 - [Configuration arguments](https://docs.ultralytics.com/usage/cfg/)
+
+
+## Rider Helmet App Usage
+
+```powershell
+python -m yolo_starter.download_helmet_dataset --max-train 3000 --max-val 400 --max-test 300
+python -m yolo_starter.train --data datasets/helmet/data.yaml --epochs 30
+python -m yolo_starter.helmet_app
+```
